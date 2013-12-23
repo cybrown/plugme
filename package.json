@@ -1,6 +1,6 @@
 {
   "name": "plugme",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Dependency Injection framework",
   "scripts": {
     "test": "grunt test"
