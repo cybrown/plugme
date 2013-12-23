@@ -45,6 +45,12 @@ Plugme.prototype.get = function (pNameOrDeps, cb) {
     }
 };
 
+Plugme.prototype.start = function (name) {
+    this.getOne(name, function (err, next) {
+        next();
+    });
+};
+
 Plugme.prototype.getOne = function (name, cb) {
     var that = this;
     if (that.components.hasOwnProperty(name)) {

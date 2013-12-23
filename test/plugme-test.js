@@ -131,4 +131,11 @@ describe('Plugme', function () {
         plug.get('once2', function () {});
         plug.get('once2', done);
     });
+
+    it ('should start a component', function (done) {
+        plug.set('runlevel-1', function (next) {
+            next(done);
+        })
+        plug.start('runlevel-1');
+    });
 });
