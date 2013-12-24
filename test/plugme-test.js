@@ -117,7 +117,7 @@ describe('Plugme', function () {
 
     it ('should try to load a component only once', function (done) {
         plug.set('once', function (next) {
-            setImmediate(done);
+            setTimeout(done);
             setTimeout(next, 10);
         });
         plug.get('once', function () {});
