@@ -1,6 +1,6 @@
 {
   "name": "plugme",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Dependency Injection framework",
   "scripts": {
     "test": "grunt test"
@@ -12,6 +12,7 @@
     "url" : "http://github.com/cybrown/plugme.git"
   },
   "keywords": [
+          "plugme",
           "di",
           "dependency injection",
           "service container",
@@ -27,7 +28,6 @@
   "devDependencies": {
     "should": "~2.1.1",
     "grunt-mocha-cli": "~1.4.0",
-    "grunt-mocha-cov": "~0.1.1",
     "grunt": "~0.4.2",
     "mocha": "~1.16.2",
     "grunt-jslint": "~1.1.2"
