@@ -138,4 +138,37 @@ describe('Plugme', function () {
         })
         plug.start('runlevel-1');
     });
+
+    describe ('#set', function () {
+
+        it ('should accept only a string as a name', function () {
+            (function () {
+                var NOT_A_STRING = 1;
+                plug.set(NOT_A_STRING, function () {});
+            }).should.throw();
+        });
+
+        it ('should accept only a string or array of strings as dependencies name', function () {
+            (function () {
+                var NOT_A_STRING = 1;
+                plug.set('aaa', NOT_A_STRING, function () {});
+            }).should.throw();
+        });
+    });
+
+    describe ('#get', function () {
+
+        it ('should accept only a string or an array of string as dependency name', function () {
+            (function () {
+                var NOT_A_STRING = 1;
+                plug.get(NOT_A_STRING, function () {});
+            }).should.throw();
+        })
+
+        it ('should accept only a function as callback', function () {
+            (function () {
+                plug.get('a', 'not a function');
+            }).should.throw();
+        })
+    });
 });

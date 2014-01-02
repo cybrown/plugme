@@ -26,6 +26,16 @@ Plugme.prototype.set = function (name, pDepsOrFactory, pFactory) {
         factory = pDepsOrFactory;
         deps = [];
     }
+    if (typeof name !== 'string') {
+        throw new Error('Plugme#set name must be a string');
+    }
+    if (typeof deps !== 'string') {
+        deps.forEach(function (dep) {
+            if (typeof dep !== 'string') {
+                throw new Error('Plugme#set dependencies must be a string or an array of strings');
+            }
+        });
+    }
     if (typeof factory === 'function') {
         this._setFactory(name, deps, factory);
     } else {
@@ -39,6 +49,13 @@ Plugme.prototype.set = function (name, pDepsOrFactory, pFactory) {
  * @param  {Function} cb
  */
 Plugme.prototype.get = function (pNameOrDeps, cb) {
+    if (typeof pNameOrDeps !== 'string') {
+        pNameOrDeps.forEach(function (dep) {
+            if (typeof dep !== 'string') {
+                throw new Error('Plugme#set dependencies must be a string or an array of strings');
+            }
+        });
+    }
     if (typeof pNameOrDeps === 'string') {
         this._getOne(pNameOrDeps, cb);
     } else {
