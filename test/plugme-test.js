@@ -152,21 +152,6 @@ describe('Plugme', function () {
         });
     });
 
-    describe ('Forbiden cases', function () {
-
-        it ('should throw an error if a factory returns a value and call the return function', function (done) {
-            plug.set('aaa', function (next) {
-                next('a');
-                return 'a';
-            });
-            (function () {
-                plug.get('aaa', function (err, aaa) {
-                    done();
-                });
-            }).should.throw();
-        });
-    });
-
     describe ('#set with wrong parameters', function () {
 
         it ('should accept only a string as a name', function () {
@@ -198,5 +183,56 @@ describe('Plugme', function () {
                 plug.get('a', 'not a function');
             }).should.throw();
         })
+    });
+
+    describe ('Error handling', function () {
+
+        var a = 1, errHandler;
+        errHandler = function () {
+            a++;
+        };
+
+        it ('should add an error handler', function () {
+            plug.onError(errHandler);
+        });
+
+        it ('should call an error handler if an error occurs', function (done) {
+            var localErrorHandler = function () {
+                a.should.eql(2);
+                plug.offError(localErrorHandler);
+                done();
+            };
+            plug.set('error', function () {
+                throw new Error('a test error');
+            });
+            plug.onError(localErrorHandler);
+            plug.get('error', function (err, error) {
+
+            });
+        });
+
+        it ('should remove an error handler, and set an handler once', function (done) {
+            plug.offError(errHandler);
+            plug.onceError(function () {
+                a.should.eql(2);
+                done();
+            });
+            plug.get('error', function () {
+
+            });
+        });
+
+        it ('should emit an error if a factory returns a value and call the return function', function (done) {
+            plug.set('aaa', function (next) {
+                next('a');
+                return 'a';
+            });
+            plug.onceError(function () {
+                done();
+            });
+            plug.get('aaa', function (err, aaa) {
+                
+            });
+        });
     });
 });

@@ -9,6 +9,39 @@ var Plugme = function () {
     this._registry = {};
     this._components = {};
     this._pendingCallbacks = {};
+    this._errorHandlers = [];
+};
+
+/**
+ * Set an error handler
+ * @param  {Function} cb
+ */
+Plugme.prototype.onError = function (cb) {
+    this._errorHandlers.push(cb);
+};
+
+/**
+ * Set an error handler only once
+ * @param  {Function} cb
+ */
+Plugme.prototype.onceError = function (cb) {
+    var that = this, func;
+    func = function () {
+        that.offError(func);
+        cb();
+    };
+    this._errorHandlers.push(func);
+};
+
+/**
+ * Unset an error handler
+ * @param  {Function} cb
+ */
+Plugme.prototype.offError = function (cb) {
+    var index = this._errorHandlers.indexOf(cb);
+    if (index !== -1) {
+        this._errorHandlers.splice(index, 1);
+    }
 };
 
 /**
@@ -146,6 +179,12 @@ Plugme.prototype._addPendingCallback = function (name, cb) {
     this._pendingCallbacks[name].push(cb);
 };
 
+Plugme.prototype._emitError = function (ex) {
+    this._errorHandlers.forEach(function (handler) {
+        handler(ex);
+    });
+};
+
 /**
  * Create a new lazy loaded component from factory
  * @private
@@ -168,6 +207,7 @@ Plugme.prototype._create = function (name, cb) {
         returnFunction = function (result) {
             var index;
             if (alreadyReturned) {
+                //this._emitError(new Error('Factory must not call the return callback and return a value other than undefined: ' + name));
                 throw new Error('Factory must not call the return callback and return a value other than undefined: ' + name);
             }
             alreadyReturned = true;
@@ -182,9 +222,14 @@ Plugme.prototype._create = function (name, cb) {
             }
         };
         dependencies.push(returnFunction);
-        value = that._registry[name].factory.apply(this, dependencies);
-        if (value !== undefined) {
-            returnFunction(value);
+        try {
+            value = that._registry[name].factory.apply(this, dependencies);
+            if (value !== undefined) {
+                returnFunction(value);
+            }
+        } catch (ex) {
+            that._registry[name].canBeCreated = true;
+            that._emitError(ex);
         }
     });
 };
