@@ -1,5 +1,6 @@
 module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-mocha-cli');
+    grunt.loadNpmTasks('grunt-jslint');
 
     grunt.initConfig({
         mochacli: {
@@ -8,8 +9,18 @@ module.exports = function(grunt) {
                 require: ['should']
             },
             all: ['test/']
+        },
+        jslint: {
+            all: {
+                src: ['index.js'],
+                directives: {
+                    node: true,
+                    nomen: true
+                }
+            }
         }
     });
 
-    grunt.registerTask('test', ['mochacli:all']);
+    grunt.registerTask('lint', ['jslint:all']);
+    grunt.registerTask('test', ['lint', 'mochacli:all']);
 };

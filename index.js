@@ -1,99 +1,175 @@
+'use strict';
 var async = require('async');
 
+/**
+ * Dependency container and injection class
+ * @constructor
+ */
 var Plugme = function () {
-    this.registry = {};
-    this.components = {};
-    this.pendingCallbacks = {};
+    this._registry = {};
+    this._components = {};
+    this._pendingCallbacks = {};
 };
 
+/**
+ * Set a new component
+ * @param {String} name Name of the component
+ * @param {String | String[] | Function} pDepsOrFactory Dependencies or factory function for the component
+ * @param {Function} [pFactory] Factory function
+ */
 Plugme.prototype.set = function (name, pDepsOrFactory, pFactory) {
     var deps, factory;
     if (pFactory !== undefined) {
         factory = pFactory;
         deps = pDepsOrFactory;
-    }
-    else {
+    } else {
         factory = pDepsOrFactory;
         deps = [];
     }
+    if (typeof name !== 'string') {
+        throw new Error('Plugme#set name must be a string');
+    }
+    if (typeof deps !== 'string') {
+        deps.forEach(function (dep) {
+            if (typeof dep !== 'string') {
+                throw new Error('Plugme#set dependencies must be a string or an array of strings');
+            }
+        });
+    }
     if (typeof factory === 'function') {
-        this.setFactory(name, deps, factory);
+        this._setFactory(name, deps, factory);
     } else {
-        this.setScalar(name, factory);
+        this._setScalar(name, factory);
     }
 };
 
-Plugme.prototype.setFactory = function (name, deps, factory) {
-    this.registry[name] = {
-        factory: factory,
-        deps: deps,
-        canBeCreated: true
-    };
-};
-
-Plugme.prototype.setScalar = function (name, value) {
-    this.components[name] = value;
-};
-
+/**
+ * Get components from the registry and execute the callback
+ * @param  {String | String[]}   pNameOrDeps
+ * @param  {Function} cb
+ */
 Plugme.prototype.get = function (pNameOrDeps, cb) {
+    if (typeof pNameOrDeps !== 'string') {
+        pNameOrDeps.forEach(function (dep) {
+            if (typeof dep !== 'string') {
+                throw new Error('Plugme#set dependencies must be a string or an array of strings');
+            }
+        });
+    }
     if (typeof pNameOrDeps === 'string') {
-        this.getOne(pNameOrDeps, cb);
+        this._getOne(pNameOrDeps, cb);
     } else {
-        async.map(pNameOrDeps, this.getOne.bind(this), function (err, results) {
+        async.map(pNameOrDeps, this._getOne.bind(this), function (err, results) {
             cb.apply(err, results);
         });
     }
 };
 
 Plugme.prototype.start = function (name) {
-    this.getOne(name, function (err, next) {
-        next();
+    this._getOne(name, function (err, next) {
+        next(err);
     });
 };
 
-Plugme.prototype.getOne = function (name, cb) {
+/**
+ * Return true if a component is already available
+ * @param  {String}  name
+ * @return {Boolean} true if component is available
+ */
+Plugme.prototype.isLoaded = function (name) {
+    return this._components.hasOwnProperty(name);
+};
+
+// PRIVATE
+
+/**
+ * Get one dependency and inject it in the callback
+ * @private
+ * @param  {String}   name
+ * @param  {Function} cb
+ */
+Plugme.prototype._getOne = function (name, cb) {
     var that = this;
-    if (that.components.hasOwnProperty(name)) {
-        cb(null, that.components[name]);
-    } else if (that.registry.hasOwnProperty(name)) {
-        that.create(name, function () {
-            cb(null, that.components[name]);
+    if (that._components.hasOwnProperty(name)) {
+        cb(null, that._components[name]);
+    } else if (that._registry.hasOwnProperty(name)) {
+        that._create(name, function () {
+            cb(null, that._components[name]);
         });
     } else {
         cb(new Error('Component ' + name + 'does not exist'));
     }
 };
 
-Plugme.prototype.addPendingCallback = function (name, cb) {
-    if (!this.pendingCallbacks.hasOwnProperty(name)) {
-        this.pendingCallbacks[name] = [];
-    }
-    this.pendingCallbacks[name].push(cb);
+/**
+ * Set a new factory in the component registry
+ * @private
+ * @param {String} name
+ * @param {String[]} deps
+ * @param {Function} factory
+ */
+Plugme.prototype._setFactory = function (name, deps, factory) {
+    this._registry[name] = {
+        factory: factory,
+        deps: deps,
+        canBeCreated: true
+    };
 };
 
-Plugme.prototype.create = function (name, cb) {
+/**
+ * Set a new scalar value in the registry
+ * @private
+ * @param {String} name
+ * @param {Any} value
+ */
+Plugme.prototype._setScalar = function (name, value) {
+    this._components[name] = value;
+};
+
+/**
+ * Add a callback for a loading dependency
+ * @private
+ * @param {String}   name
+ * @param {Function} cb
+ */
+Plugme.prototype._addPendingCallback = function (name, cb) {
+    if (!this._pendingCallbacks.hasOwnProperty(name)) {
+        this._pendingCallbacks[name] = [];
+    }
+    this._pendingCallbacks[name].push(cb);
+};
+
+/**
+ * Create a new lazy loaded component from factory
+ * @private
+ * @param  {String}   name
+ * @param  {Function} cb
+ */
+Plugme.prototype._create = function (name, cb) {
     var that = this;
-    if (this.registry[name].canBeCreated != true) {
-        this.addPendingCallback(name, cb);
+    if (this._registry[name].canBeCreated !== true) {
+        this._addPendingCallback(name, cb);
         return;
     }
-    this.registry[name].canBeCreated = false;
-    async.map(this.registry[name].deps, this.getOne.bind(this), function (err, dependencies) {
+    this._registry[name].canBeCreated = false;
+    async.map(this._registry[name].deps, this._getOne.bind(this), function (err, dependencies) {
+        if (err) {
+            cb(err);
+        }
         dependencies.push(function (result) {
-            that.components[name] = result;
+            var index;
+            that._components[name] = result;
             cb();
-            if (that.pendingCallbacks.hasOwnProperty(name)) {
-                for (var index in that.pendingCallbacks[name]) {
-                    that.pendingCallbacks[name][index]();
+            if (that._pendingCallbacks.hasOwnProperty(name)) {
+                for (index in that._pendingCallbacks[name]) {
+                    if (that._pendingCallbacks[name].hasOwnProperty(index)) {
+                        that._pendingCallbacks[name][index]();
+                    }
                 }
             }
         });
-        that.registry[name].factory.apply(this, dependencies);
+        that._registry[name].factory.apply(this, dependencies);
     });
-};
-
-Plugme.prototype.isLoaded = function (name) {
-    return this.components.hasOwnProperty(name);
 };
 
 module.exports = Plugme;
