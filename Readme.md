@@ -7,7 +7,7 @@ Simple asynchronous dependency container and injector.
 	$ npm install plugme
 
 ## Quick start
-```
+```js
 var Plugme = require('plugme');
 var plug = new Plugme();
 
