@@ -12,6 +12,7 @@
     "url" : "http://github.com/cybrown/plugme.git"
   },
   "keywords": [
+          "plugme",
           "di",
           "dependency injection",
           "service container",
