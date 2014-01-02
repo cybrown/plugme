@@ -1,3 +1,4 @@
+'use strict';
 var async = require('async');
 
 /**
@@ -21,8 +22,7 @@ Plugme.prototype.set = function (name, pDepsOrFactory, pFactory) {
     if (pFactory !== undefined) {
         factory = pFactory;
         deps = pDepsOrFactory;
-    }
-    else {
+    } else {
         factory = pDepsOrFactory;
         deps = [];
     }
@@ -50,7 +50,7 @@ Plugme.prototype.get = function (pNameOrDeps, cb) {
 
 Plugme.prototype.start = function (name) {
     this._getOne(name, function (err, next) {
-        next();
+        next(err);
     });
 };
 
@@ -130,18 +130,24 @@ Plugme.prototype._addPendingCallback = function (name, cb) {
  */
 Plugme.prototype._create = function (name, cb) {
     var that = this;
-    if (this._registry[name].canBeCreated != true) {
+    if (this._registry[name].canBeCreated !== true) {
         this._addPendingCallback(name, cb);
         return;
     }
     this._registry[name].canBeCreated = false;
     async.map(this._registry[name].deps, this._getOne.bind(this), function (err, dependencies) {
+        if (err) {
+            cb(err);
+        }
         dependencies.push(function (result) {
+            var index;
             that._components[name] = result;
             cb();
             if (that._pendingCallbacks.hasOwnProperty(name)) {
-                for (var index in that._pendingCallbacks[name]) {
-                    that._pendingCallbacks[name][index]();
+                for (index in that._pendingCallbacks[name]) {
+                    if (that._pendingCallbacks[name].hasOwnProperty(index)) {
+                        that._pendingCallbacks[name][index]();
+                    }
                 }
             }
         });
