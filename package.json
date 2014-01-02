@@ -1,6 +1,6 @@
 {
   "name": "plugme",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Dependency Injection framework",
   "scripts": {
     "test": "grunt test"
@@ -11,6 +11,15 @@
     "type" : "git",
     "url" : "http://github.com/cybrown/plugme.git"
   },
+  "keywords": [
+          "di",
+          "dependency injection",
+          "service container",
+          "ioc",
+          "inversion of control",
+          "injection",
+          "component"
+  ],
   "license": "BSD-2-Clause",
   "dependencies": {
     "async": "~0.2.9"
