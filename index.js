@@ -65,9 +65,16 @@ Plugme.prototype.get = function (pNameOrDeps, cb) {
     }
 };
 
-Plugme.prototype.start = function (name) {
-    this._getOne(name, function (err, next) {
-        next(err);
+/**
+ * Start the application
+ * @param  {Function} cb Function to call after the application is ready
+ */
+Plugme.prototype.start = function (cb) {
+    if (!this._registry.hasOwnProperty('start')) {
+        throw new Error('A start component must be declared before start is called');
+    }
+    this._getOne('start', typeof cb === 'function' ? cb : function () {
+        return null;
     });
 };
 
@@ -153,11 +160,17 @@ Plugme.prototype._create = function (name, cb) {
     }
     this._registry[name].canBeCreated = false;
     async.map(this._registry[name].deps, this._getOne.bind(this), function (err, dependencies) {
+        var alreadyReturned, returnFunction, value;
         if (err) {
             cb(err);
         }
-        dependencies.push(function (result) {
+        alreadyReturned = false;
+        returnFunction = function (result) {
             var index;
+            if (alreadyReturned) {
+                throw new Error('Factory must not call the return callback and return a value other than undefined: ' + name);
+            }
+            alreadyReturned = true;
             that._components[name] = result;
             cb();
             if (that._pendingCallbacks.hasOwnProperty(name)) {
@@ -167,8 +180,12 @@ Plugme.prototype._create = function (name, cb) {
                     }
                 }
             }
-        });
-        that._registry[name].factory.apply(this, dependencies);
+        };
+        dependencies.push(returnFunction);
+        value = that._registry[name].factory.apply(this, dependencies);
+        if (value !== undefined) {
+            returnFunction(value);
+        }
     });
 };
 

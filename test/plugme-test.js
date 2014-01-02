@@ -85,11 +85,14 @@ describe('Plugme', function () {
             plug.set('e', function (next) {
                 next('E');
             });
+        });
+
+        it ('should add components directly from returning them without calling the callback', function () {
             plug.set('f', ['g'], function (g, next) {
-                next('F');
+                return 'F';
             });
             plug.set('g', function (next) {
-                next('G');
+                return 'G';
             });
         });
 
@@ -134,11 +137,33 @@ describe('Plugme', function () {
             plug.get('once2', done);
         });
 
-        it ('should start a component', function (done) {
-            plug.set('runlevel-1', function (next) {
-                next(done);
-            })
-            plug.start('runlevel-1');
+        it ('should throw an error if starting without a start component', function () {
+            (function () {
+                plug.start();
+            }).should.throw();
+        });
+
+        it ('should call the start component with the start method, with or without a callback', function (done) {
+            plug.set('start', function () {
+                return null;
+            });
+            plug.start();
+            plug.start(done);
+        });
+    });
+
+    describe ('Forbiden cases', function () {
+
+        it ('should throw an error if a factory returns a value and call the return function', function (done) {
+            plug.set('aaa', function (next) {
+                next('a');
+                return 'a';
+            });
+            (function () {
+                plug.get('aaa', function (err, aaa) {
+                    done();
+                });
+            }).should.throw();
         });
     });
 
