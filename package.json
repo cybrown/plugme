@@ -1,11 +1,16 @@
 {
   "name": "plugme",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Dependency Injection framework",
   "scripts": {
     "test": "grunt test"
   },
   "author": "Cy Brown <cy.brown59@gmail.com>",
+  "repository" :
+  {
+    "type" : "git",
+    "url" : "http://github.com/cybrown/plugme.git"
+  },
   "license": "BSD-2-Clause",
   "dependencies": {
     "async": "~0.2.9"
