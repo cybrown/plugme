@@ -1,6 +1,5 @@
-Plugme
+Plugme [![Build Status](https://travis-ci.org/cybrown/plugme.png?branch=master)](https://travis-ci.org/cybrown/plugme)
 ======
-
 Simple asynchronous dependency container and injector.
 
 ## Installation
