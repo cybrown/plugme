@@ -234,5 +234,31 @@ describe('Plugme', function () {
                 
             });
         });
+
+        it ('should emit an error if a factory do not call the return callback before the timeout', function (done) {
+            plug.timeout = 100;
+            plug.set('never', function (next) {
+
+            });
+            plug.onceError(function (err) {
+                done();
+            });
+            plug.get('never', function () {
+
+            });
+        });
+
+        it ('should cancel a callback if timeout is reached', function (done) {
+            plug.timeout = 100;
+            plug.set('never', function (next) {
+                setTimeout(function () {
+                    next(null);
+                }, 150);
+            });
+            plug.get('never', function (err, never) {
+                done(1);    // should not be called
+            });
+            setTimeout(done, 200);
+        });
     });
 });

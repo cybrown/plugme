@@ -10,6 +10,7 @@ var Plugme = function () {
     this._components = {};
     this._pendingCallbacks = {};
     this._errorHandlers = [];
+    this.timeout = 10000;
 };
 
 /**
@@ -26,9 +27,9 @@ Plugme.prototype.onError = function (cb) {
  */
 Plugme.prototype.onceError = function (cb) {
     var that = this, func;
-    func = function () {
+    func = function (err) {
         that.offError(func);
-        cb();
+        cb(err);
     };
     this._errorHandlers.push(func);
 };
@@ -199,13 +200,17 @@ Plugme.prototype._create = function (name, cb) {
     }
     this._registry[name].canBeCreated = false;
     async.map(this._registry[name].deps, this._getOne.bind(this), function (err, dependencies) {
-        var alreadyReturned, returnFunction, value;
+        var alreadyReturned, returnFunction, value, timeout, hasTimeout;
         if (err) {
             cb(err);
         }
         alreadyReturned = false;
         returnFunction = function (result) {
             var index;
+            if (hasTimeout) {
+                return;
+            }
+            clearTimeout(timeout);
             if (alreadyReturned) {
                 //this._emitError(new Error('Factory must not call the return callback and return a value other than undefined: ' + name));
                 throw new Error('Factory must not call the return callback and return a value other than undefined: ' + name);
@@ -231,6 +236,10 @@ Plugme.prototype._create = function (name, cb) {
             that._registry[name].canBeCreated = true;
             that._emitError(ex);
         }
+        timeout = setTimeout(function () {
+            hasTimeout = true;
+            that._emitError(new Error('Timeout for component: ' + name));
+        }, that.timeout);
     });
 };
 
