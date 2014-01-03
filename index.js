@@ -9,6 +9,40 @@ var Plugme = function () {
     this._registry = {};
     this._components = {};
     this._pendingCallbacks = {};
+    this._errorHandlers = [];
+    this.timeout = 10000;
+};
+
+/**
+ * Set an error handler
+ * @param  {Function} cb
+ */
+Plugme.prototype.onError = function (cb) {
+    this._errorHandlers.push(cb);
+};
+
+/**
+ * Set an error handler only once
+ * @param  {Function} cb
+ */
+Plugme.prototype.onceError = function (cb) {
+    var that = this, func;
+    func = function (err) {
+        that.offError(func);
+        cb(err);
+    };
+    this._errorHandlers.push(func);
+};
+
+/**
+ * Unset an error handler
+ * @param  {Function} cb
+ */
+Plugme.prototype.offError = function (cb) {
+    var index = this._errorHandlers.indexOf(cb);
+    if (index !== -1) {
+        this._errorHandlers.splice(index, 1);
+    }
 };
 
 /**
@@ -65,9 +99,16 @@ Plugme.prototype.get = function (pNameOrDeps, cb) {
     }
 };
 
-Plugme.prototype.start = function (name) {
-    this._getOne(name, function (err, next) {
-        next(err);
+/**
+ * Start the application
+ * @param  {Function} cb Function to call after the application is ready
+ */
+Plugme.prototype.start = function (cb) {
+    if (!this._registry.hasOwnProperty('start')) {
+        throw new Error('A start component must be declared before start is called');
+    }
+    this._getOne('start', typeof cb === 'function' ? cb : function () {
+        return null;
     });
 };
 
@@ -139,6 +180,12 @@ Plugme.prototype._addPendingCallback = function (name, cb) {
     this._pendingCallbacks[name].push(cb);
 };
 
+Plugme.prototype._emitError = function (ex) {
+    this._errorHandlers.forEach(function (handler) {
+        handler(ex);
+    });
+};
+
 /**
  * Create a new lazy loaded component from factory
  * @private
@@ -153,11 +200,22 @@ Plugme.prototype._create = function (name, cb) {
     }
     this._registry[name].canBeCreated = false;
     async.map(this._registry[name].deps, this._getOne.bind(this), function (err, dependencies) {
+        var alreadyReturned, returnFunction, value, timeout, hasTimeout;
         if (err) {
             cb(err);
         }
-        dependencies.push(function (result) {
+        alreadyReturned = false;
+        returnFunction = function (result) {
             var index;
+            if (hasTimeout) {
+                return;
+            }
+            clearTimeout(timeout);
+            if (alreadyReturned) {
+                //this._emitError(new Error('Factory must not call the return callback and return a value other than undefined: ' + name));
+                throw new Error('Factory must not call the return callback and return a value other than undefined: ' + name);
+            }
+            alreadyReturned = true;
             that._components[name] = result;
             cb();
             if (that._pendingCallbacks.hasOwnProperty(name)) {
@@ -167,8 +225,21 @@ Plugme.prototype._create = function (name, cb) {
                     }
                 }
             }
-        });
-        that._registry[name].factory.apply(this, dependencies);
+        };
+        dependencies.push(returnFunction);
+        try {
+            value = that._registry[name].factory.apply(this, dependencies);
+            if (value !== undefined) {
+                returnFunction(value);
+            }
+        } catch (ex) {
+            that._registry[name].canBeCreated = true;
+            that._emitError(ex);
+        }
+        timeout = setTimeout(function () {
+            hasTimeout = true;
+            that._emitError(new Error('Timeout for component: ' + name));
+        }, that.timeout);
     });
 };
 
