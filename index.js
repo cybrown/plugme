@@ -47,29 +47,39 @@ Plugme.prototype.offError = function (cb) {
  * @param {String | String[] | Function} pDepsOrFactory Dependencies or factory function for the component
  * @param {Function} [pFactory] Factory function
  */
-Plugme.prototype.set = function (name, pDepsOrFactory, pFactory) {
-    var deps, factory;
-    if (pFactory !== undefined) {
-        factory = pFactory;
-        deps = pDepsOrFactory;
+Plugme.prototype.set = function (pNameOrDict, pDepsOrFactory, pFactory) {
+    var name, dict, deps, factory, i;
+    if (typeof pNameOrDict === 'string') {
+        name = pNameOrDict;
+        if (pFactory !== undefined) {
+            factory = pFactory;
+            deps = pDepsOrFactory;
+        } else {
+            factory = pDepsOrFactory;
+            deps = [];
+        }
+        if (typeof deps !== 'string') {
+            deps.forEach(function (dep) {
+                if (typeof dep !== 'string') {
+                    throw new Error('Plugme#set dependencies must be a string or an array of strings');
+                }
+            });
+        }
+        if (typeof factory === 'function') {
+            this._setFactory(name, deps, factory);
+        } else {
+            this._setScalar(name, factory);
+        }
     } else {
-        factory = pDepsOrFactory;
-        deps = [];
-    }
-    if (typeof name !== 'string') {
-        throw new Error('Plugme#set name must be a string');
-    }
-    if (typeof deps !== 'string') {
-        deps.forEach(function (dep) {
-            if (typeof dep !== 'string') {
-                throw new Error('Plugme#set dependencies must be a string or an array of strings');
+        dict = pNameOrDict;
+        if (typeof dict !== 'object') {
+            throw new Error('Plugme#set first argument must be a string or a plain object');
+        }
+        for (i in dict) {
+            if (dict.hasOwnProperty(i)) {
+                this.set(i, dict[i]);
             }
-        });
-    }
-    if (typeof factory === 'function') {
-        this._setFactory(name, deps, factory);
-    } else {
-        this._setScalar(name, factory);
+        }
     }
 };
 
