@@ -12,6 +12,31 @@ describe('Plugme', function () {
             });
         });
 
+        it ('should set multiple scalar values', function () {
+            plug.set({
+                'login': 'user',
+                'password': 'userpass'
+            });
+            plug.get(['login', 'password'], function (login, password) {
+                login.should.eql('user');
+                password.should.eql('userpass');
+            });
+        });
+
+        it ('should set a function scalar value (function as value and not factory)', function (done) {
+            plug.set({
+                'func': function () {
+                    return 'a';
+                }
+            });
+            plug.get(['func'], function (func) {
+                func.should.not.eql('a');
+                func().should.eql('a');
+                done();
+            });
+        });
+
+
         it ('should retrieve a component with a string', function (done) {
             plug.get('a', function (a) {
                 (a == null).should.not.be.ok;
@@ -146,10 +171,10 @@ describe('Plugme', function () {
 
     describe ('#set with wrong parameters', function () {
 
-        it ('should accept only a string as a name', function () {
+        it ('should accept only a string as a name, or a plain object of dependencies', function () {
             (function () {
-                var NOT_A_STRING = 1;
-                plug.set(NOT_A_STRING, function () {});
+                var NOT_A_STRING_NOR_AN_OBJECT = 1;
+                plug.set(NOT_A_STRING_NOR_AN_OBJECT, function () {});
             }).should.throw();
         });
 
