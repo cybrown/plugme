@@ -83,6 +83,7 @@ Plugme.prototype.set = function (name, pDepsOrFactory, pFactory) {
  * @param  {Function} cb
  */
 Plugme.prototype.get = function (pNameOrDeps, cb) {
+    var _this = this;
     if (typeof pNameOrDeps !== 'string') {
         pNameOrDeps.forEach(function (dep) {
             if (typeof dep !== 'string') {
@@ -91,10 +92,20 @@ Plugme.prototype.get = function (pNameOrDeps, cb) {
         });
     }
     if (typeof pNameOrDeps === 'string') {
-        this._getOne(pNameOrDeps, cb);
+        this._getOne(pNameOrDeps, function (err, ret) {
+            if (err) {
+                _this._emitError(new Error('Component ' + pNameOrDeps + 'does not exist'));
+            } else {
+                cb(ret);
+            }
+        });
     } else {
         async.map(pNameOrDeps, this._getOne.bind(this), function (err, results) {
-            cb.apply(err, results);
+            if (err) {
+                _this._emitError(new Error('Component ' + pNameOrDeps + 'does not exist'));
+            } else {
+                cb.apply(null, results);
+            }
         });
     }
 };
@@ -138,7 +149,7 @@ Plugme.prototype._getOne = function (name, cb) {
             cb(null, that._components[name]);
         });
     } else {
-        cb(new Error('Component ' + name + 'does not exist'));
+        cb(new Error('Component ' + name + 'does not exist'), null);
     }
 };
 

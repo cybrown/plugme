@@ -13,8 +13,7 @@ describe('Plugme', function () {
         });
 
         it ('should retrieve a component with a string', function (done) {
-            plug.get('a', function (err, a) {
-                (err == null).should.be.ok;
+            plug.get('a', function (a) {
                 (a == null).should.not.be.ok;
                 a.should.eql('A');
                 done();
@@ -47,7 +46,7 @@ describe('Plugme', function () {
         });
 
         it ('should retrieve a component with a dependency', function (done) {
-            plug.get(['b'], function (err, b) {
+            plug.get(['b'], function (b) {
                 plug.isLoaded('c').should.eql(true);
                 done();
             });
@@ -62,13 +61,6 @@ describe('Plugme', function () {
         it ('should retrieve a component with a dependency already loaded', function (done) {
             plug.get(['d'], function (d) {
                 d.a.should.eql('A');
-                done();
-            });
-        });
-
-        it ('should return an error if a component is not set', function (done) {
-            plug.get('does not exist', function (err, doesNotExist) {
-                err.should.be.an.instanceof(Error);
                 done();
             });
         });
@@ -114,7 +106,7 @@ describe('Plugme', function () {
         });
 
         it ('should retrieve a scalar component', function (done) {
-            plug.get('scalar', function (err, scalar) {
+            plug.get('scalar', function (scalar) {
                 scalar.should.eql('localhost:3000');
                 done();
             });
@@ -206,7 +198,7 @@ describe('Plugme', function () {
                 throw new Error('a test error');
             });
             plug.onError(localErrorHandler);
-            plug.get('error', function (err, error) {
+            plug.get('error', function (error) {
 
             });
         });
@@ -230,7 +222,7 @@ describe('Plugme', function () {
             plug.onceError(function () {
                 done();
             });
-            plug.get('aaa', function (err, aaa) {
+            plug.get('aaa', function (aaa) {
                 
             });
         });
@@ -255,10 +247,29 @@ describe('Plugme', function () {
                     next(null);
                 }, 150);
             });
-            plug.get('never', function (err, never) {
+            plug.get('never', function (never) {
                 done(1);    // should not be called
             });
             setTimeout(done, 200);
         });
+
+        it ('should emit an error if a component is not found', function (done) {
+            plug.onceError(function () {
+                done();
+            });
+            plug.get('not_found', function (not_found) {
+                throw new Error("This should not be executed");
+            });
+        });
+
+        it ('should emit an error if a component is not found', function (done) {
+            plug.onceError(function () {
+                done();
+            });
+            plug.get(['a', 'not_found'], function (a, not_found) {
+                throw new Error("This should not be executed");
+            });
+        });
+
     });
 });
