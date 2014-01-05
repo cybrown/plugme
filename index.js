@@ -13,7 +13,6 @@ var assert = function (condition, description) {
  */
 var Plugme = function () {
     this._registry = {};
-    this._components = {};
     this._pendingCallbacks = {};
     this._errorHandlers = [];
     this.timeout = 10000;
@@ -113,7 +112,7 @@ Plugme.prototype.start = function (cb) {
  * @return {Boolean} true if component is available
  */
 Plugme.prototype.isLoaded = function (name) {
-    return this._components.hasOwnProperty(name);
+    return this._registry.hasOwnProperty(name) && this._registry[name].cache !== undefined;
 };
 
 // PRIVATE
@@ -126,12 +125,14 @@ Plugme.prototype.isLoaded = function (name) {
  */
 Plugme.prototype._getOne = function (name, cb) {
     var _this = this;
-    if (this._components.hasOwnProperty(name)) {
-        cb(null, _this._components[name]);
-    } else if (this._registry.hasOwnProperty(name)) {
-        this._create(name, function () {
-            cb(null, _this._components[name]);
-        });
+    if (this._registry.hasOwnProperty(name)) {
+        if (this._registry[name].cache !== undefined) {
+            cb(null, this._registry[name].cache);
+        } else {
+            this._create(name, function () {
+                cb(null, _this._registry[name].cache);
+            });
+        }
     } else {
         this._emitError(new Error('Component ' + name + 'does not exist'));
     }
@@ -162,7 +163,8 @@ Plugme.prototype._setFactory = function (name, deps, factory) {
  * @param {Any} value
  */
 Plugme.prototype._setScalar = function (name, value) {
-    this._components[name] = value;
+    this._registry[name] = {};
+    this._registry[name].cache = value;
 };
 
 /**
@@ -231,7 +233,7 @@ Plugme.prototype._create = function (name, cb) {
             clearTimeout(timeout);
             assert(!alreadyReturned, 'Factory must not call the return callback and return a value other than undefined: ' + name);
             alreadyReturned = true;
-            _this._components[name] = result;
+            _this._registry[name].cache = result;
             cb();
             if (_this._pendingCallbacks.hasOwnProperty(name)) {
                 for (index in _this._pendingCallbacks[name]) {
