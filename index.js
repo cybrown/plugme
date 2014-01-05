@@ -151,7 +151,7 @@ Plugme.prototype._setFactory = function (name, deps, factory) {
     this._registry[name] = {
         factory: factory,
         deps: deps,
-        canBeCreated: true,
+        hasBeginLoading: false,
         callbacks: []
     };
 };
@@ -203,10 +203,10 @@ Plugme.prototype._emitError = function (ex) {
 Plugme.prototype._create = function (name, cb) {
     var _this = this;
     this._registry[name].callbacks.push(cb);
-    if (this._registry[name].canBeCreated !== true) {
+    if (this._registry[name].hasBeginLoading) {
         return;
     }
-    this._registry[name].canBeCreated = false;
+    this._registry[name].hasBeginLoading = true;
     async.map(this._registry[name].deps, this._getOne.bind(this), function (err, dependencies) {
         var alreadyReturned, returnFunction, value, timeout, hasTimeout;
         if (err) {
@@ -237,7 +237,7 @@ Plugme.prototype._create = function (name, cb) {
                 returnFunction(value);
             }
         } catch (ex) {
-            _this._registry[name].canBeCreated = true;
+            _this._registry[name].hasBeginLoading = false;
             _this._emitError(ex);
         }
     });
