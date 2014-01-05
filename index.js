@@ -1,6 +1,12 @@
 'use strict';
 var async = require('async');
 
+var assert = function (condition, description) {
+    if (!condition) {
+        throw new Error(description);
+    }
+};
+
 /**
  * Dependency container and injection class
  * @constructor
@@ -48,38 +54,17 @@ Plugme.prototype.offError = function (cb) {
  * @param {Function} [pFactory] Factory function
  */
 Plugme.prototype.set = function (pNameOrDict, pDepsOrFactory, pFactory) {
-    var name, dict, deps, factory, i;
+    assert(['string', 'object'].indexOf(typeof pNameOrDict) >= 0, 'Plugme#set first argument must be a string or a plain object');
     if (typeof pNameOrDict === 'string') {
-        name = pNameOrDict;
-        if (pFactory !== undefined) {
-            factory = pFactory;
-            deps = pDepsOrFactory;
+        if (typeof pFactory === 'function') {
+            this._setFactory(pNameOrDict, pDepsOrFactory, pFactory);
+        } else if (typeof pDepsOrFactory === 'function') {
+            this._setFactory(pNameOrDict, [], pDepsOrFactory);
         } else {
-            factory = pDepsOrFactory;
-            deps = [];
-        }
-        if (typeof deps !== 'string') {
-            deps.forEach(function (dep) {
-                if (typeof dep !== 'string') {
-                    throw new Error('Plugme#set dependencies must be a string or an array of strings');
-                }
-            });
-        }
-        if (typeof factory === 'function') {
-            this._setFactory(name, deps, factory);
-        } else {
-            this._setScalar(name, factory);
+            this._setScalar(pNameOrDict, pDepsOrFactory);
         }
     } else {
-        dict = pNameOrDict;
-        if (typeof dict !== 'object') {
-            throw new Error('Plugme#set first argument must be a string or a plain object');
-        }
-        for (i in dict) {
-            if (dict.hasOwnProperty(i)) {
-                this._setScalar(i, dict[i]);
-            }
-        }
+        this._setDictionary(pNameOrDict);
     }
 };
 
@@ -89,27 +74,20 @@ Plugme.prototype.set = function (pNameOrDict, pDepsOrFactory, pFactory) {
  * @param  {Function} cb
  */
 Plugme.prototype.get = function (pNameOrDeps, cb) {
-    var _this = this;
     if (typeof pNameOrDeps !== 'string') {
         pNameOrDeps.forEach(function (dep) {
-            if (typeof dep !== 'string') {
-                throw new Error('Plugme#set dependencies must be a string or an array of strings');
-            }
+            assert(typeof dep === 'string', 'Plugme#set dependencies must be a string or an array of strings');
         });
     }
     if (typeof pNameOrDeps === 'string') {
         this._getOne(pNameOrDeps, function (err, ret) {
-            if (err) {
-                _this._emitError(new Error('Component ' + pNameOrDeps + 'does not exist'));
-            } else {
+            if (!err) {
                 cb(ret);
             }
         });
     } else {
         async.map(pNameOrDeps, this._getOne.bind(this), function (err, results) {
-            if (err) {
-                _this._emitError(new Error('Component ' + pNameOrDeps + 'does not exist'));
-            } else {
+            if (!err) {
                 cb.apply(null, results);
             }
         });
@@ -147,15 +125,15 @@ Plugme.prototype.isLoaded = function (name) {
  * @param  {Function} cb
  */
 Plugme.prototype._getOne = function (name, cb) {
-    var that = this;
-    if (that._components.hasOwnProperty(name)) {
-        cb(null, that._components[name]);
-    } else if (that._registry.hasOwnProperty(name)) {
-        that._create(name, function () {
-            cb(null, that._components[name]);
+    var _this = this;
+    if (this._components.hasOwnProperty(name)) {
+        cb(null, _this._components[name]);
+    } else if (this._registry.hasOwnProperty(name)) {
+        this._create(name, function () {
+            cb(null, _this._components[name]);
         });
     } else {
-        cb(new Error('Component ' + name + 'does not exist'), null);
+        this._emitError(new Error('Component ' + name + 'does not exist'));
     }
 };
 
@@ -167,6 +145,9 @@ Plugme.prototype._getOne = function (name, cb) {
  * @param {Function} factory
  */
 Plugme.prototype._setFactory = function (name, deps, factory) {
+    deps.forEach(function (value) {
+        assert(typeof value === 'string', 'Dependencies must be an array of string');
+    });
     this._registry[name] = {
         factory: factory,
         deps: deps,
@@ -182,6 +163,18 @@ Plugme.prototype._setFactory = function (name, deps, factory) {
  */
 Plugme.prototype._setScalar = function (name, value) {
     this._components[name] = value;
+};
+
+/**
+ * Set multiple scalar values from a dictionary
+ * @param dictionary
+ * @private
+ */
+Plugme.prototype._setDictionary = function (dictionary) {
+    var _this = this;
+    Object.keys(dictionary).forEach(function (key) {
+        _this._setScalar(key, dictionary[key]);
+    });
 };
 
 /**
@@ -214,7 +207,7 @@ Plugme.prototype._emitError = function (ex) {
  * @param  {Function} cb
  */
 Plugme.prototype._create = function (name, cb) {
-    var that = this;
+    var _this = this;
     if (this._registry[name].canBeCreated !== true) {
         this._addPendingCallback(name, cb);
         return;
@@ -228,38 +221,35 @@ Plugme.prototype._create = function (name, cb) {
         alreadyReturned = false;
         timeout = setTimeout(function () {
             hasTimeout = true;
-            that._emitError(new Error('Timeout for component: ' + name));
-        }, that.timeout);
+            _this._emitError(new Error('Timeout for component: ' + name));
+        }, _this.timeout);
         returnFunction = function (result) {
             var index;
             if (hasTimeout) {
                 return;
             }
             clearTimeout(timeout);
-            if (alreadyReturned) {
-                //this._emitError(new Error('Factory must not call the return callback and return a value other than undefined: ' + name));
-                throw new Error('Factory must not call the return callback and return a value other than undefined: ' + name);
-            }
+            assert(!alreadyReturned, 'Factory must not call the return callback and return a value other than undefined: ' + name);
             alreadyReturned = true;
-            that._components[name] = result;
+            _this._components[name] = result;
             cb();
-            if (that._pendingCallbacks.hasOwnProperty(name)) {
-                for (index in that._pendingCallbacks[name]) {
-                    if (that._pendingCallbacks[name].hasOwnProperty(index)) {
-                        that._pendingCallbacks[name][index]();
+            if (_this._pendingCallbacks.hasOwnProperty(name)) {
+                for (index in _this._pendingCallbacks[name]) {
+                    if (_this._pendingCallbacks[name].hasOwnProperty(index)) {
+                        _this._pendingCallbacks[name][index]();
                     }
                 }
             }
         };
         dependencies.push(returnFunction);
         try {
-            value = that._registry[name].factory.apply(this, dependencies);
+            value = _this._registry[name].factory.apply(this, dependencies);
             if (value !== undefined) {
                 returnFunction(value);
             }
         } catch (ex) {
-            that._registry[name].canBeCreated = true;
-            that._emitError(ex);
+            _this._registry[name].canBeCreated = true;
+            _this._emitError(ex);
         }
     });
 };
