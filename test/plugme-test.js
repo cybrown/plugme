@@ -66,13 +66,6 @@ describe('Plugme', function () {
             });
         });
 
-        it ('should return an error if a component is not set', function (done) {
-            plug.get('does not exist', function (err, doesNotExist) {
-                err.should.be.an.instanceof(Error);
-                done();
-            });
-        });
-
         it ('should return two components', function (done) {
             plug.get(['a', 'b'], function (a, b) {
                 a.should.eql('A');
@@ -260,5 +253,15 @@ describe('Plugme', function () {
             });
             setTimeout(done, 200);
         });
+
+        it ('should emit an error if a component is not found', function (done) {
+            plug.onceError(function () {
+                done();
+            });
+            plug.get('not_found', function (err, not_found) {
+                throw new Error("This should not be executed");
+            });
+        });
+
     });
 });

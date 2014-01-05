@@ -138,7 +138,7 @@ Plugme.prototype._getOne = function (name, cb) {
             cb(null, that._components[name]);
         });
     } else {
-        cb(new Error('Component ' + name + 'does not exist'));
+        this._emitError(new Error('Component ' + name + 'does not exist'));
     }
 };
 
