@@ -26,12 +26,8 @@ Plugme.prototype.onError = function (cb) {
  * @param  {Function} cb
  */
 Plugme.prototype.onceError = function (cb) {
-    var that = this, func;
-    func = function (err) {
-        that.offError(func);
-        cb(err);
-    };
-    this._errorHandlers.push(func);
+    cb.once = true;
+    this._errorHandlers.push(cb);
 };
 
 /**
@@ -192,7 +188,11 @@ Plugme.prototype._addPendingCallback = function (name, cb) {
 };
 
 Plugme.prototype._emitError = function (ex) {
+    var _this = this;
     this._errorHandlers.forEach(function (handler) {
+        if (handler.once) {
+            _this.offError(handler);
+        }
         handler(ex);
     });
 };
@@ -216,6 +216,10 @@ Plugme.prototype._create = function (name, cb) {
             cb(err);
         }
         alreadyReturned = false;
+        timeout = setTimeout(function () {
+            hasTimeout = true;
+            that._emitError(new Error('Timeout for component: ' + name));
+        }, that.timeout);
         returnFunction = function (result) {
             var index;
             if (hasTimeout) {
@@ -247,10 +251,6 @@ Plugme.prototype._create = function (name, cb) {
             that._registry[name].canBeCreated = true;
             that._emitError(ex);
         }
-        timeout = setTimeout(function () {
-            hasTimeout = true;
-            that._emitError(new Error('Timeout for component: ' + name));
-        }, that.timeout);
     });
 };
 
