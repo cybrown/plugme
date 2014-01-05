@@ -180,15 +180,10 @@ Plugme.prototype._setDictionary = function (dictionary) {
 };
 
 /**
- * Add a callback for a loading dependency
+ * Emit an error
+ * @param ex
  * @private
- * @param {String}   name
- * @param {Function} cb
  */
-Plugme.prototype._addPendingCallback = function (name, cb) {
-    this._registry[name].callbacks.push(cb);
-};
-
 Plugme.prototype._emitError = function (ex) {
     var _this = this;
     this._errorHandlers.forEach(function (handler) {
@@ -207,7 +202,7 @@ Plugme.prototype._emitError = function (ex) {
  */
 Plugme.prototype._create = function (name, cb) {
     var _this = this;
-    this._addPendingCallback(name, cb);
+    this._registry[name].callbacks.push(cb);
     if (this._registry[name].canBeCreated !== true) {
         return;
     }
