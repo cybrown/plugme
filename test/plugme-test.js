@@ -223,8 +223,26 @@ describe('Plugme', function () {
                 done();
             });
             plug.get('aaa', function (aaa) {
-                
+
             });
+        });
+
+        it ('should not emit an error if a factory returns normaly', function (done) {
+            plug.timeout = 100;
+            plug.set('bbb', function (next) {
+                next('b');
+            });
+            var errFunc = function (err) {
+                throw new Error('Should not be called');
+            };
+            plug.onceError(errFunc);
+            plug.get('bbb', function (bbb) {
+
+            });
+            setTimeout(function () {
+                plug.offError(errFunc);
+                done();
+            }, 200);
         });
 
         it ('should emit an error if a factory do not call the return callback before the timeout', function (done) {
@@ -270,6 +288,5 @@ describe('Plugme', function () {
                 throw new Error("This should not be executed");
             });
         });
-
     });
 });
