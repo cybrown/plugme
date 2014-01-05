@@ -77,7 +77,7 @@ Plugme.prototype.set = function (pNameOrDict, pDepsOrFactory, pFactory) {
         }
         for (i in dict) {
             if (dict.hasOwnProperty(i)) {
-                this.set(i, dict[i]);
+                this._setScalar(i, dict[i]);
             }
         }
     }

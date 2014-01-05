@@ -23,6 +23,19 @@ describe('Plugme', function () {
             });
         });
 
+        it ('should set a function scalar value (function as value and not factory)', function (done) {
+            plug.set({
+                'func': function () {
+                    return 'a';
+                }
+            });
+            plug.get(['func'], function (func) {
+                func.should.not.eql('a');
+                func().should.eql('a');
+                done();
+            });
+        });
+
 
         it ('should retrieve a component with a string', function (done) {
             plug.get('a', function (a) {
