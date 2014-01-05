@@ -26,12 +26,8 @@ Plugme.prototype.onError = function (cb) {
  * @param  {Function} cb
  */
 Plugme.prototype.onceError = function (cb) {
-    var that = this, func;
-    func = function (err) {
-        that.offError(func);
-        cb(err);
-    };
-    this._errorHandlers.push(func);
+    cb.once = true;
+    this._errorHandlers.push(cb);
 };
 
 /**
@@ -51,29 +47,39 @@ Plugme.prototype.offError = function (cb) {
  * @param {String | String[] | Function} pDepsOrFactory Dependencies or factory function for the component
  * @param {Function} [pFactory] Factory function
  */
-Plugme.prototype.set = function (name, pDepsOrFactory, pFactory) {
-    var deps, factory;
-    if (pFactory !== undefined) {
-        factory = pFactory;
-        deps = pDepsOrFactory;
+Plugme.prototype.set = function (pNameOrDict, pDepsOrFactory, pFactory) {
+    var name, dict, deps, factory, i;
+    if (typeof pNameOrDict === 'string') {
+        name = pNameOrDict;
+        if (pFactory !== undefined) {
+            factory = pFactory;
+            deps = pDepsOrFactory;
+        } else {
+            factory = pDepsOrFactory;
+            deps = [];
+        }
+        if (typeof deps !== 'string') {
+            deps.forEach(function (dep) {
+                if (typeof dep !== 'string') {
+                    throw new Error('Plugme#set dependencies must be a string or an array of strings');
+                }
+            });
+        }
+        if (typeof factory === 'function') {
+            this._setFactory(name, deps, factory);
+        } else {
+            this._setScalar(name, factory);
+        }
     } else {
-        factory = pDepsOrFactory;
-        deps = [];
-    }
-    if (typeof name !== 'string') {
-        throw new Error('Plugme#set name must be a string');
-    }
-    if (typeof deps !== 'string') {
-        deps.forEach(function (dep) {
-            if (typeof dep !== 'string') {
-                throw new Error('Plugme#set dependencies must be a string or an array of strings');
+        dict = pNameOrDict;
+        if (typeof dict !== 'object') {
+            throw new Error('Plugme#set first argument must be a string or a plain object');
+        }
+        for (i in dict) {
+            if (dict.hasOwnProperty(i)) {
+                this._setScalar(i, dict[i]);
             }
-        });
-    }
-    if (typeof factory === 'function') {
-        this._setFactory(name, deps, factory);
-    } else {
-        this._setScalar(name, factory);
+        }
     }
 };
 
@@ -83,6 +89,7 @@ Plugme.prototype.set = function (name, pDepsOrFactory, pFactory) {
  * @param  {Function} cb
  */
 Plugme.prototype.get = function (pNameOrDeps, cb) {
+    var _this = this;
     if (typeof pNameOrDeps !== 'string') {
         pNameOrDeps.forEach(function (dep) {
             if (typeof dep !== 'string') {
@@ -91,10 +98,20 @@ Plugme.prototype.get = function (pNameOrDeps, cb) {
         });
     }
     if (typeof pNameOrDeps === 'string') {
-        this._getOne(pNameOrDeps, cb);
+        this._getOne(pNameOrDeps, function (err, ret) {
+            if (err) {
+                _this._emitError(new Error('Component ' + pNameOrDeps + 'does not exist'));
+            } else {
+                cb(ret);
+            }
+        });
     } else {
         async.map(pNameOrDeps, this._getOne.bind(this), function (err, results) {
-            cb.apply(err, results);
+            if (err) {
+                _this._emitError(new Error('Component ' + pNameOrDeps + 'does not exist'));
+            } else {
+                cb.apply(null, results);
+            }
         });
     }
 };
@@ -138,7 +155,7 @@ Plugme.prototype._getOne = function (name, cb) {
             cb(null, that._components[name]);
         });
     } else {
-        cb(new Error('Component ' + name + 'does not exist'));
+        cb(new Error('Component ' + name + 'does not exist'), null);
     }
 };
 
@@ -181,7 +198,11 @@ Plugme.prototype._addPendingCallback = function (name, cb) {
 };
 
 Plugme.prototype._emitError = function (ex) {
+    var _this = this;
     this._errorHandlers.forEach(function (handler) {
+        if (handler.once) {
+            _this.offError(handler);
+        }
         handler(ex);
     });
 };
@@ -205,6 +226,10 @@ Plugme.prototype._create = function (name, cb) {
             cb(err);
         }
         alreadyReturned = false;
+        timeout = setTimeout(function () {
+            hasTimeout = true;
+            that._emitError(new Error('Timeout for component: ' + name));
+        }, that.timeout);
         returnFunction = function (result) {
             var index;
             if (hasTimeout) {
@@ -236,10 +261,6 @@ Plugme.prototype._create = function (name, cb) {
             that._registry[name].canBeCreated = true;
             that._emitError(ex);
         }
-        timeout = setTimeout(function () {
-            hasTimeout = true;
-            that._emitError(new Error('Timeout for component: ' + name));
-        }, that.timeout);
     });
 };
 

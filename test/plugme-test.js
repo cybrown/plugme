@@ -12,9 +12,33 @@ describe('Plugme', function () {
             });
         });
 
+        it ('should set multiple scalar values', function () {
+            plug.set({
+                'login': 'user',
+                'password': 'userpass'
+            });
+            plug.get(['login', 'password'], function (login, password) {
+                login.should.eql('user');
+                password.should.eql('userpass');
+            });
+        });
+
+        it ('should set a function scalar value (function as value and not factory)', function (done) {
+            plug.set({
+                'func': function () {
+                    return 'a';
+                }
+            });
+            plug.get(['func'], function (func) {
+                func.should.not.eql('a');
+                func().should.eql('a');
+                done();
+            });
+        });
+
+
         it ('should retrieve a component with a string', function (done) {
-            plug.get('a', function (err, a) {
-                (err == null).should.be.ok;
+            plug.get('a', function (a) {
                 (a == null).should.not.be.ok;
                 a.should.eql('A');
                 done();
@@ -47,7 +71,7 @@ describe('Plugme', function () {
         });
 
         it ('should retrieve a component with a dependency', function (done) {
-            plug.get(['b'], function (err, b) {
+            plug.get(['b'], function (b) {
                 plug.isLoaded('c').should.eql(true);
                 done();
             });
@@ -62,13 +86,6 @@ describe('Plugme', function () {
         it ('should retrieve a component with a dependency already loaded', function (done) {
             plug.get(['d'], function (d) {
                 d.a.should.eql('A');
-                done();
-            });
-        });
-
-        it ('should return an error if a component is not set', function (done) {
-            plug.get('does not exist', function (err, doesNotExist) {
-                err.should.be.an.instanceof(Error);
                 done();
             });
         });
@@ -114,7 +131,7 @@ describe('Plugme', function () {
         });
 
         it ('should retrieve a scalar component', function (done) {
-            plug.get('scalar', function (err, scalar) {
+            plug.get('scalar', function (scalar) {
                 scalar.should.eql('localhost:3000');
                 done();
             });
@@ -154,10 +171,10 @@ describe('Plugme', function () {
 
     describe ('#set with wrong parameters', function () {
 
-        it ('should accept only a string as a name', function () {
+        it ('should accept only a string as a name, or a plain object of dependencies', function () {
             (function () {
-                var NOT_A_STRING = 1;
-                plug.set(NOT_A_STRING, function () {});
+                var NOT_A_STRING_NOR_AN_OBJECT = 1;
+                plug.set(NOT_A_STRING_NOR_AN_OBJECT, function () {});
             }).should.throw();
         });
 
@@ -206,7 +223,7 @@ describe('Plugme', function () {
                 throw new Error('a test error');
             });
             plug.onError(localErrorHandler);
-            plug.get('error', function (err, error) {
+            plug.get('error', function (error) {
 
             });
         });
@@ -230,9 +247,27 @@ describe('Plugme', function () {
             plug.onceError(function () {
                 done();
             });
-            plug.get('aaa', function (err, aaa) {
-                
+            plug.get('aaa', function (aaa) {
+
             });
+        });
+
+        it ('should not emit an error if a factory returns normaly', function (done) {
+            plug.timeout = 100;
+            plug.set('bbb', function (next) {
+                next('b');
+            });
+            var errFunc = function (err) {
+                throw new Error('Should not be called');
+            };
+            plug.onceError(errFunc);
+            plug.get('bbb', function (bbb) {
+
+            });
+            setTimeout(function () {
+                plug.offError(errFunc);
+                done();
+            }, 200);
         });
 
         it ('should emit an error if a factory do not call the return callback before the timeout', function (done) {
@@ -255,10 +290,28 @@ describe('Plugme', function () {
                     next(null);
                 }, 150);
             });
-            plug.get('never', function (err, never) {
+            plug.get('never', function (never) {
                 done(1);    // should not be called
             });
             setTimeout(done, 200);
+        });
+
+        it ('should emit an error if a component is not found', function (done) {
+            plug.onceError(function () {
+                done();
+            });
+            plug.get('not_found', function (not_found) {
+                throw new Error("This should not be executed");
+            });
+        });
+
+        it ('should emit an error if a component is not found', function (done) {
+            plug.onceError(function () {
+                done();
+            });
+            plug.get(['a', 'not_found'], function (a, not_found) {
+                throw new Error("This should not be executed");
+            });
         });
     });
 });

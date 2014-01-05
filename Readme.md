@@ -2,6 +2,12 @@ Plugme [![Build Status](https://travis-ci.org/cybrown/plugme.png?branch=master)]
 ======
 Simple asynchronous dependency container and injector.
 
+Define your components in functions, return them asynchronously, and inject them in other components.
+
+No configuration file required, component definition based on anonymous functions as factories.
+
+Inspired by requirejs, and angularjs factories.
+
 ## Installation
 
 	$ npm install plugme
@@ -15,7 +21,7 @@ var plug = new Plugme();
 plug.set('adminLogin', 'admin');
 plug.set('adminPassword', 'admin');
 
-// Set the function to authenticate, using configuration values
+// Set the function to authenticate, using configuration values, equivalent to define
 plug.set('authenticate', ['adminLogin', 'adminPassword'], function (adminLogin, adminPassword, done) {
 	var authenticate = function (login, password, cb) {
 		if (login === adminLogin && password === adminPassword) {
@@ -24,10 +30,10 @@ plug.set('authenticate', ['adminLogin', 'adminPassword'], function (adminLogin, 
 			cb(null, false);
 		}
 	};
-	done(authenticate);
+	done(authenticate); // The component is returned asynchronously, but a return statement can be used if synchronous
 });
 
-// Use the authenticate function in application code
+// Use the authenticate function in application code, equivalent to require
 plug.get(['authenticate'], function (authenticate) {
 	authenticate('foo', 'bar', function (err, isAuthenticated) {
 		console.log('Is authenticated:', isAuthenticated);

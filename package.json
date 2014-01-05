@@ -1,6 +1,6 @@
 {
   "name": "plugme",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Dependency Injection framework",
   "scripts": {
     "test": "grunt test"
@@ -29,7 +29,6 @@
     "should": "~2.1.1",
     "grunt-mocha-cli": "~1.4.0",
     "grunt": "~0.4.2",
-    "mocha": "~1.16.2",
     "grunt-jslint": "~1.1.2"
   }
 }
