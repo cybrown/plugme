@@ -13,7 +13,6 @@ var assert = function (condition, description) {
  */
 var Plugme = function () {
     this._registry = {};
-    this._pendingCallbacks = {};
     this._errorHandlers = [];
     this.timeout = 10000;
 };
@@ -152,7 +151,8 @@ Plugme.prototype._setFactory = function (name, deps, factory) {
     this._registry[name] = {
         factory: factory,
         deps: deps,
-        canBeCreated: true
+        canBeCreated: true,
+        callbacks: []
     };
 };
 
@@ -186,10 +186,7 @@ Plugme.prototype._setDictionary = function (dictionary) {
  * @param {Function} cb
  */
 Plugme.prototype._addPendingCallback = function (name, cb) {
-    if (!this._pendingCallbacks.hasOwnProperty(name)) {
-        this._pendingCallbacks[name] = [];
-    }
-    this._pendingCallbacks[name].push(cb);
+    this._registry[name].callbacks.push(cb);
 };
 
 Plugme.prototype._emitError = function (ex) {
@@ -210,15 +207,15 @@ Plugme.prototype._emitError = function (ex) {
  */
 Plugme.prototype._create = function (name, cb) {
     var _this = this;
+    this._addPendingCallback(name, cb);
     if (this._registry[name].canBeCreated !== true) {
-        this._addPendingCallback(name, cb);
         return;
     }
     this._registry[name].canBeCreated = false;
     async.map(this._registry[name].deps, this._getOne.bind(this), function (err, dependencies) {
         var alreadyReturned, returnFunction, value, timeout, hasTimeout;
         if (err) {
-            cb(err);
+            _this._emitError(err);
         }
         alreadyReturned = false;
         timeout = setTimeout(function () {
@@ -226,7 +223,6 @@ Plugme.prototype._create = function (name, cb) {
             _this._emitError(new Error('Timeout for component: ' + name));
         }, _this.timeout);
         returnFunction = function (result) {
-            var index;
             if (hasTimeout) {
                 return;
             }
@@ -234,14 +230,10 @@ Plugme.prototype._create = function (name, cb) {
             assert(!alreadyReturned, 'Factory must not call the return callback and return a value other than undefined: ' + name);
             alreadyReturned = true;
             _this._registry[name].cache = result;
-            cb();
-            if (_this._pendingCallbacks.hasOwnProperty(name)) {
-                for (index in _this._pendingCallbacks[name]) {
-                    if (_this._pendingCallbacks[name].hasOwnProperty(index)) {
-                        _this._pendingCallbacks[name][index]();
-                    }
-                }
-            }
+            _this._registry[name].callbacks.forEach(function (cb) {
+                cb();
+            });
+            _this._registry[name].callbacks.length = 0;
         };
         dependencies.push(returnFunction);
         try {
