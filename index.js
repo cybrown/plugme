@@ -94,7 +94,7 @@ Plugme.prototype.get = function (pNameOrDeps, cb) {
 
 /**
  * Start the application
- * @param  {Function} cb Function to call after the application is ready
+ * @param  {Function} [cb] Function to call after the application is ready
  */
 Plugme.prototype.start = function (cb) {
     assert(this._registry.hasOwnProperty('start'), 'A start component must be declared before start is called');
