@@ -22,5 +22,5 @@ module.exports = function(grunt) {
     });
 
     grunt.registerTask('lint', ['jslint:all']);
-    grunt.registerTask('test', ['lint', 'mochacli:all']);
+    grunt.registerTask('test', ['mochacli:all']);
 };
