@@ -32,6 +32,17 @@ module.exports = function(grunt) {
                     sourcemap: true,
                     declaration: true
                 }
+            },
+            build: {
+                src: ['src/**/*.ts'],
+                dest: 'js/',
+                options: {
+                    module: 'commonjs',
+                    target: 'es5',
+                    base_path: 'src/',
+                    sourcemap: false,
+                    declaration: false
+                }
             }
         },
         clean: ["js"]
@@ -40,4 +51,5 @@ module.exports = function(grunt) {
     grunt.registerTask('lint', ['jslint:all']);
     grunt.registerTask('ts',   ['typescript']);
     grunt.registerTask('test', ['clean', 'ts', 'mochacli:all']);
+    grunt.registerTask('build',   ['typescript:build']);
 };
