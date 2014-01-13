@@ -47,7 +47,6 @@ plug.get(['authenticate'], function (authenticate) {
 ## Features
 
   * AMD like component definition
-  * Define asynchronous components
   * Components creation can be asynchronous
   * Contains simple values for configuration purpose
   * Components are not tied to file system (different from requirejs)
