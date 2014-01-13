@@ -13,6 +13,9 @@ Inspired by requirejs, and angularjs factories.
     $ npm install plugme
 
 ## Quick start
+
+In this example, a function is a component to authenticate a user, and the default admin credentials are stored as value dependencies.
+
 ```js
 var Plugme = require('plugme').Plugme;
 var plug = new Plugme();
@@ -50,6 +53,19 @@ plug.get(['authenticate'], function (authenticate) {
   * Components creation can be asynchronous
   * Contains simple values for configuration purpose
   * Components are not tied to file system (different from requirejs)
+  * Build with typescript (not mandatory)
+
+## Notes
+"Introspection" (using .toString on a function and infer dependencies from arguments name) is not supported, since it does not support minification.
+
+Typescript is not mandatory to use this library.
+
+If you are familiar with requirejs, set is like define, and get is like require.
+
+## Future
+
+    * Add a scope concept (inject values depending on the current session, request etc...).
+    * Create multiple set methods, for values, factories, services and providers.
 
 ## LICENCE
 (The MIT License)
