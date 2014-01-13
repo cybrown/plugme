@@ -2,4 +2,5 @@
 /.idea/*
 *.iml
 /js/*
+!/js/index.js
 *.sublime-workspace
