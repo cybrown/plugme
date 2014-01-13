@@ -1,4 +1,4 @@
-var Plugme = require('../index');
+var Plugme = require('../index').Plugme;
 
 var plug = new Plugme();
 
@@ -16,6 +16,6 @@ plug.set('async_add', function (done) {
     });
 });
 
-plug.get(['add', 'add_async'], function (add, add_async) {
-    console.log(add(1 + 2) === add_async(1 + 2));
+plug.get(['add', 'async_add'], function (add, async_add) {
+    console.log(add(1, 2) === async_add(1, 2));
 });
