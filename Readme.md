@@ -10,11 +10,14 @@ Inspired by requirejs, and angularjs factories.
 
 ## Installation
 
-	$ npm install plugme
+    $ npm install plugme
 
 ## Quick start
+
+In this example, a function is a component to authenticate a user, and the default admin credentials are stored as value dependencies.
+
 ```js
-var Plugme = require('plugme');
+var Plugme = require('plugme').Plugme;
 var plug = new Plugme();
 
 // Set configuration values
@@ -23,24 +26,24 @@ plug.set('adminPassword', 'admin');
 
 // Set the function to authenticate, using configuration values, equivalent to define
 plug.set('authenticate', ['adminLogin', 'adminPassword'], function (adminLogin, adminPassword, done) {
-	var authenticate = function (login, password, cb) {
-		if (login === adminLogin && password === adminPassword) {
-			cb(null, true);
-		} else {
-			cb(null, false);
-		}
-	};
-	done(authenticate); // The component is returned asynchronously, but a return statement can be used if synchronous
+    var authenticate = function (login, password, cb) {
+        if (login === adminLogin && password === adminPassword) {
+            cb(null, true);
+        } else {
+            cb(null, false);
+        }
+    };
+    done(authenticate); // The component is returned asynchronously, but a return statement can be used if synchronous
 });
 
 // Use the authenticate function in application code, equivalent to require
 plug.get(['authenticate'], function (authenticate) {
-	authenticate('foo', 'bar', function (err, isAuthenticated) {
-		console.log('Is authenticated:', isAuthenticated);
-	});
-	authenticate('admin', 'admin', function (err, isAuthenticated) {
-		console.log('Is authenticated:', isAuthenticated);
-	});
+    authenticate('foo', 'bar', function (err, isAuthenticated) {
+        console.log('Is authenticated:', isAuthenticated);
+    });
+    authenticate('admin', 'admin', function (err, isAuthenticated) {
+        console.log('Is authenticated:', isAuthenticated);
+    });
 });
 ```
 
@@ -50,6 +53,19 @@ plug.get(['authenticate'], function (authenticate) {
   * Components creation can be asynchronous
   * Contains simple values for configuration purpose
   * Components are not tied to file system (different from requirejs)
+  * Build with typescript (not mandatory)
+
+## Notes
+"Introspection" (using .toString on a function and infer dependencies from arguments name) is not supported, since it does not support minification.
+
+Typescript is not mandatory to use this library.
+
+If you are familiar with requirejs, set is like define, and get is like require.
+
+## Future
+
+    * Add a scope concept (inject values depending on the current session, request etc...).
+    * Create multiple set methods, for values, factories, services and providers.
 
 ## LICENCE
 (The MIT License)

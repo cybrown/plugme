@@ -1,6 +1,8 @@
 module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-mocha-cli');
     grunt.loadNpmTasks('grunt-jslint');
+    grunt.loadNpmTasks('grunt-typescript');
+    grunt.loadNpmTasks('grunt-contrib-clean');
 
     grunt.initConfig({
         mochacli: {
@@ -18,9 +20,36 @@ module.exports = function(grunt) {
                     nomen: true
                 }
             }
-        }
+        },
+        typescript: {
+            base: {
+                src: ['src/**/*.ts'],
+                dest: 'js/',
+                options: {
+                    module: 'commonjs',
+                    target: 'es5',
+                    base_path: 'src/',
+                    sourcemap: true,
+                    declaration: true
+                }
+            },
+            build: {
+                src: ['src/**/*.ts'],
+                dest: 'js/',
+                options: {
+                    module: 'commonjs',
+                    target: 'es5',
+                    base_path: 'src/',
+                    sourcemap: false,
+                    declaration: false
+                }
+            }
+        },
+        clean: ["js"]
     });
 
     grunt.registerTask('lint', ['jslint:all']);
-    grunt.registerTask('test', ['lint', 'mochacli:all']);
+    grunt.registerTask('ts',   ['typescript']);
+    grunt.registerTask('test', ['clean', 'ts', 'mochacli:all']);
+    grunt.registerTask('build',   ['typescript:build']);
 };

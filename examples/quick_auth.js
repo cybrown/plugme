@@ -1,4 +1,4 @@
-var Plugme = require('../index');
+var Plugme = require('../index').Plugme;
 var plug = new Plugme();
 
 // Set configuration values

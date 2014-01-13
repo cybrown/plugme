@@ -1,4 +1,4 @@
-var Plugme = require('../index');
+var Plugme = require('../index').Plugme;
 
 describe('Plugme', function () {
 

@@ -1,6 +1,6 @@
 {
   "name": "plugme",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Dependency Injection library",
   "scripts": {
     "test": "grunt test"
@@ -29,6 +29,8 @@
     "should": "~2.1.1",
     "grunt-mocha-cli": "~1.4.0",
     "grunt": "~0.4.2",
-    "grunt-jslint": "~1.1.2"
+    "grunt-jslint": "~1.1.2",
+    "grunt-typescript": "~0.2.7",
+    "grunt-contrib-clean": "~0.5.0"
   }
 }

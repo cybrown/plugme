@@ -1,3 +1,6 @@
 /node_modules/*
 /.idea/*
 *.iml
+/js/*
+!/js/index.js
+*.sublime-workspace
