@@ -10,11 +10,11 @@ Inspired by requirejs, and angularjs factories.
 
 ## Installation
 
-	$ npm install plugme
+    $ npm install plugme
 
 ## Quick start
 ```js
-var Plugme = require('plugme');
+var Plugme = require('plugme').Plugme;
 var plug = new Plugme();
 
 // Set configuration values
@@ -23,24 +23,24 @@ plug.set('adminPassword', 'admin');
 
 // Set the function to authenticate, using configuration values, equivalent to define
 plug.set('authenticate', ['adminLogin', 'adminPassword'], function (adminLogin, adminPassword, done) {
-	var authenticate = function (login, password, cb) {
-		if (login === adminLogin && password === adminPassword) {
-			cb(null, true);
-		} else {
-			cb(null, false);
-		}
-	};
-	done(authenticate); // The component is returned asynchronously, but a return statement can be used if synchronous
+    var authenticate = function (login, password, cb) {
+        if (login === adminLogin && password === adminPassword) {
+            cb(null, true);
+        } else {
+            cb(null, false);
+        }
+    };
+    done(authenticate); // The component is returned asynchronously, but a return statement can be used if synchronous
 });
 
 // Use the authenticate function in application code, equivalent to require
 plug.get(['authenticate'], function (authenticate) {
-	authenticate('foo', 'bar', function (err, isAuthenticated) {
-		console.log('Is authenticated:', isAuthenticated);
-	});
-	authenticate('admin', 'admin', function (err, isAuthenticated) {
-		console.log('Is authenticated:', isAuthenticated);
-	});
+    authenticate('foo', 'bar', function (err, isAuthenticated) {
+        console.log('Is authenticated:', isAuthenticated);
+    });
+    authenticate('admin', 'admin', function (err, isAuthenticated) {
+        console.log('Is authenticated:', isAuthenticated);
+    });
 });
 ```
 
