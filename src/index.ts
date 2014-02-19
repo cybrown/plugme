@@ -123,6 +123,7 @@ module plugme {
         _setFactory (name, deps, factory) {
             deps.forEach(value => {
                 assert(typeof value === 'string', 'Dependencies must be an array of string');
+                assert(value !== 'start', 'start component must not be a dependency, choose another name')
             });
             this._registry[name] = {
                 factory: factory,

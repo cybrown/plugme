@@ -182,6 +182,19 @@ describe('Plugme', function () {
             }, 20);
             plug.start();
         });
+
+        it ('should emit an error if the start component is required', function () {
+            var plug = new Plugme();
+            plug.timeout = 10;
+            plug.set('start', function () {
+                return null;
+            });
+            (function () {
+                plug.set('other', ['start'], function (start) {
+                    return null;
+                });
+            }).should.throw();
+        });
     });
 
     describe ('#set with wrong parameters', function () {
