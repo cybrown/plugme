@@ -167,6 +167,34 @@ describe('Plugme', function () {
             plug.start();
             plug.start(done);
         });
+
+        it ('should not throw if start does not return a value', function (done) {
+            var plug = new Plugme();
+            plug.timeout = 10;
+            plug.set('start', function () {
+
+            });
+            plug.onError(function (err) {
+                throw new Error('should not be called');
+            });
+            setTimeout(function () {
+                done();
+            }, 20);
+            plug.start();
+        });
+
+        it ('should emit an error if the start component is required', function () {
+            var plug = new Plugme();
+            plug.timeout = 10;
+            plug.set('start', function () {
+                return null;
+            });
+            (function () {
+                plug.set('other', ['start'], function (start) {
+                    return null;
+                });
+            }).should.throw();
+        });
     });
 
     describe ('#set with wrong parameters', function () {

@@ -123,6 +123,7 @@ module plugme {
         _setFactory (name, deps, factory) {
             deps.forEach(value => {
                 assert(typeof value === 'string', 'Dependencies must be an array of string');
+                assert(value !== 'start', 'start component must not be a dependency, choose another name')
             });
             this._registry[name] = {
                 factory: factory,
@@ -206,10 +207,12 @@ module plugme {
                     this._emitError(err);
                 }
                 alreadyReturned = false;
-                timeout = setTimeout(() => {
-                    hasTimeout = true;
-                    this._emitError(new Error('Timeout for component: ' + name));
-                }, this.timeout);
+                if (name !== 'start') {
+                    timeout = setTimeout(() => {
+                        hasTimeout = true;
+                        this._emitError(new Error('Timeout for component: ' + name));
+                    }, this.timeout);
+                }
                 returnFunction = (result) => {
                     if (hasTimeout) {
                         return;

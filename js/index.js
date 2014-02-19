@@ -80,6 +80,7 @@ var plugme;
         Plugme.prototype._setFactory = function (name, deps, factory) {
             deps.forEach(function (value) {
                 assert(typeof value === 'string', 'Dependencies must be an array of string');
+                assert(value !== 'start', 'start component must not be a dependency, choose another name');
             });
             this._registry[name] = {
                 factory: factory,
@@ -139,10 +140,12 @@ var plugme;
                     _this._emitError(err);
                 }
                 alreadyReturned = false;
-                timeout = setTimeout(function () {
-                    hasTimeout = true;
-                    _this._emitError(new Error('Timeout for component: ' + name));
-                }, _this.timeout);
+                if (name !== 'start') {
+                    timeout = setTimeout(function () {
+                        hasTimeout = true;
+                        _this._emitError(new Error('Timeout for component: ' + name));
+                    }, _this.timeout);
+                }
                 returnFunction = function (result) {
                     if (hasTimeout) {
                         return;
