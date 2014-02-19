@@ -139,10 +139,12 @@ var plugme;
                     _this._emitError(err);
                 }
                 alreadyReturned = false;
-                timeout = setTimeout(function () {
-                    hasTimeout = true;
-                    _this._emitError(new Error('Timeout for component: ' + name));
-                }, _this.timeout);
+                if (name !== 'start') {
+                    timeout = setTimeout(function () {
+                        hasTimeout = true;
+                        _this._emitError(new Error('Timeout for component: ' + name));
+                    }, _this.timeout);
+                }
                 returnFunction = function (result) {
                     if (hasTimeout) {
                         return;

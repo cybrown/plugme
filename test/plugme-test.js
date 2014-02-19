@@ -167,6 +167,21 @@ describe('Plugme', function () {
             plug.start();
             plug.start(done);
         });
+
+        it ('should not throw if start does not return a value', function (done) {
+            var plug = new Plugme();
+            plug.timeout = 10;
+            plug.set('start', function () {
+
+            });
+            plug.onError(function (err) {
+                throw new Error('should not be called');
+            });
+            setTimeout(function () {
+                done();
+            }, 20);
+            plug.start();
+        });
     });
 
     describe ('#set with wrong parameters', function () {

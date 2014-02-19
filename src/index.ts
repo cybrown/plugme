@@ -206,10 +206,12 @@ module plugme {
                     this._emitError(err);
                 }
                 alreadyReturned = false;
-                timeout = setTimeout(() => {
-                    hasTimeout = true;
-                    this._emitError(new Error('Timeout for component: ' + name));
-                }, this.timeout);
+                if (name !== 'start') {
+                    timeout = setTimeout(() => {
+                        hasTimeout = true;
+                        this._emitError(new Error('Timeout for component: ' + name));
+                    }, this.timeout);
+                }
                 returnFunction = (result) => {
                     if (hasTimeout) {
                         return;
